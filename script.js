@@ -1,3 +1,17 @@
+// Punto de partida
+function mostrarCartas(cartas) {
+    const tablero = document.getElementById("tablero");
+
+    if (tablero === null) {
+        console.error("No se encuentra el tablero.");
+        return;
+    }
+
+    tablero.textContent = cartas
+    .map(carta => carta.numero)
+    .join(" ");
+}
+
 // R1. Configuración de la partida
 const claveConfig = "config";
 

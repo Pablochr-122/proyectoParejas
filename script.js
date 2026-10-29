@@ -25,3 +25,14 @@ function generarCartas(parejas) {
     }
     return cartas;
 }
+
+//R3. Barajado
+function barajarCartas(cartas) {
+    for (let i = cartas.length - 1; i > 0; i--) {
+        const posicion = Math.floor(Math.random() * (i + 1));
+        const temporal = cartas[i];
+        cartas[i] = cartas[posicion];
+        cartas[posicion] = temporal;
+    }
+    return cartas;
+}

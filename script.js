@@ -9,6 +9,27 @@ let configuracion = {
     ...defaultConfig
 };
 
+function solicitarConfiguracion(defaultConfig) {
+    const respuesta = prompt("Introduce el número de parejas (4-12 parejas): ", String(configuracion.parejas));
+
+    if (respuesta === null) {
+        return defaultConfig;
+    }
+
+    const parejas = Number(respuesta);
+
+    if (!validarParejas(parejas)) {
+        console.error("El número de parejas debe estar entre 4 y 12");
+        return false;
+    }
+
+    configuracion.parejas = parejas;
+    guardarConfiguracion();
+
+    return true;  
+}
+
+const configElegida = solicitarConfiguracion(configuracion);
 // R2. Generacion de cartas
 function generarCartas(parejas) {
     const cartas = [];

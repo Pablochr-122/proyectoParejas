@@ -139,3 +139,17 @@ function restablecerConfiguracion() {
     guardarConfiguracion(configuracion);
     console.log("Configuración restablecida.");
 }
+
+// R7. RESUMEN EN CONSOLA
+
+function mostrarResumen(cartas, numeroParejas) {
+
+    console.log("===== RESUMEN DE LA PARTIDA =====");
+    console.log("Número de parejas:", numeroParejas);
+    console.log("Número de cartas:", cartas.length);
+    console.log(
+        "Secuencia de números:",
+        cartas.map(carta => carta.numero)
+    );
+    console.log("=================================");
+}

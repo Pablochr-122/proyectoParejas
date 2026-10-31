@@ -153,3 +153,23 @@ function mostrarResumen(cartas, numeroParejas) {
     );
     console.log("=================================");
 }
+
+// R8. ORGANIZACIÓN Y DOCUMENTACIÓN
+
+function prepararPartida(numeroParejas) {
+
+    if (!validarConfiguracion(numeroParejas)) {
+        console.error("No se puede preparar la partida.");
+        return;
+    }
+
+    configuracion.parejas = numeroParejas;
+    guardarConfiguracion(configuracion);
+    let cartas = generarCartas(numeroParejas);
+    cartas = barajarCartas(cartas);
+    let dimensiones = calcularTablero(numeroParejas);
+    console.log("Filas del tablero:", dimensiones.filas);
+    console.log("Columnas del tablero:", dimensiones.columnas);
+    mostrarResumen(cartas, numeroParejas);
+    mostrarCartas(cartas);
+}

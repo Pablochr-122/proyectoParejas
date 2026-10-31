@@ -88,3 +88,54 @@ function validarConfiguracion(numero) {
 
     return true;
 }
+
+// R6. PREFERENCIAS PERSISTENTES
+
+const claveConfig = "juegoParejasConfiguracion";
+
+function guardarConfiguracion(datos) {
+
+    localStorage.setItem(
+        claveConfig,
+        JSON.stringify(datos)
+    );
+}
+
+function recuperarConfiguracion() {
+
+    let datos = localStorage.getItem(claveConfig);
+
+    if (datos !== null) {
+
+        try {
+
+            let configuracionGuardada = JSON.parse(datos);
+
+            if (
+                configuracionGuardada !== null &&
+                typeof configuracionGuardada === "object" &&
+                !Array.isArray(configuracionGuardada) &&
+                validarConfiguracion(configuracionGuardada.parejas)
+            ) {
+
+                return {
+                    parejas: configuracionGuardada.parejas
+                };
+            }
+
+        } catch (error) {
+
+            console.error("Error al recuperar la configuración.");
+
+        }
+    }
+
+    return { ...configuracionInicial };
+}
+
+function restablecerConfiguracion() {
+    
+    configuracion = { ...configuracionInicial };
+    guardarConfiguracion(configuracion);
+    console.log("Configuración restablecida.");
+}

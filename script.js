@@ -1,87 +1,90 @@
-// R1. Configuración de la partida
-const claveConfig = "config";
+// R1. CONFIGURACIÓN DE LA PARTIDA
 
-const defaultConfig = {
+const configuracionInicial = {
     parejas: 8
 };
 
 let configuracion = {
-    ...defaultConfig
+    parejas: configuracionInicial.parejas
 };
 
-function solicitarConfiguracion(defaultConfig) {
-    const respuesta = prompt("Introduce el número de parejas (4-12 parejas): ", String(configuracion.parejas));
+function pedirConfiguracion() {
 
-    if (respuesta === null) {
-        return defaultConfig;
+    let numeroParejas = prompt("Introduce el número de parejas (entre 4 y 12):");
+    return Number(numeroParejas);
+}
+
+function calcularTablero(numeroParejas) {
+
+    let numeroCartas = numeroParejas * 2;
+    let columnas = Math.floor(Math.sqrt(numeroCartas));
+    let filas = Math.ceil(numeroCartas / columnas);
+    return {
+        filas: filas,
+        columnas: columnas
+    };
+}
+
+// R2. GENERACIÓN DE CARTAS
+
+function generarCartas(numeroParejas) {
+
+    let cartas = [];
+
+    for (let i = 1; i <= numeroParejas; i++) {
+        let carta1 = {
+            numero: i,
+            descubierta: true
+        };
+        let carta2 = {
+            numero: i,
+            descubierta: true
+        };
+        cartas.push(carta1);
+        cartas.push(carta2);
     }
+    return cartas;
+}
 
-    const parejas = Number(respuesta);
+// R3. BARAJADO
 
-    if (!validarParejas(parejas)) {
-        console.error("El número de parejas debe estar entre 4 y 12");
+function barajarCartas(cartas) {
+
+    for (let i = cartas.length - 1; i > 0; i--) {
+
+        let posicionAleatoria = Math.floor(Math.random() * (i + 1));
+        let auxiliar = cartas[i];
+        cartas[i] = cartas[posicionAleatoria];
+        cartas[posicionAleatoria] = auxiliar;
+    }
+    return cartas;
+}
+
+// R4. PRESENTACIÓN DEL TABLERO
+
+function mostrarCartas(cartas) {
+
+    let tablero = document.getElementById("tablero");
+    let contenido = "";
+    cartas.forEach(function(carta) {
+        contenido += `<div class="carta">${carta.numero}</div>`;
+    });
+    tablero.innerHTML = contenido;
+}
+
+// R5. VALIDACIÓN DE LA CONFIGURACIÓN
+
+function validarConfiguracion(numero) {
+
+    if (!Number.isInteger(numero)) {
+        console.error("El número de parejas debe ser un entero.");
         return false;
     }
 
-    configuracion.parejas = parejas;
-    guardarConfiguracion();
-
-    return true;  
-}
-
-const configElegida = solicitarConfiguracion(configuracion);
-// R2. Generacion de cartas
-function generarCartas(parejas) {
-    const cartas = [];
-
-    for (let numero = 1; numero <= parejas; numero++) {
-        cartas.push({
-            numero: numero,
-            descubierta: true
-        });
-        cartas.push({
-            numero: numero,
-            descubierta: true
-        });
-    }
-    return cartas;
-}
-
-// R3. Barajado
-function barajarCartas(cartas) {
-    for (let i = cartas.length - 1; i > 0; i--) {
-        const posicion = Math.floor(Math.random() * (i + 1));
-        const temporal = cartas[i];
-        cartas[i] = cartas[posicion];
-        cartas[posicion] = temporal;
-    }
-    return cartas;
-}
-
-// Punto de partida - R4. Presentación del tablero
-function mostrarCartas(cartas) {
-    const tablero = document.getElementById("tablero");
-
-    if (tablero === null) {
-        console.error("No se encuentra el tablero.");
-        return;
+    if (numero < 4 || numero > 12) {
+        console.error("El número de parejas debe estar entre 4 y 12.");
+        return false;
     }
 
-    tablero.textContent = cartas
-    .map(carta => carta.numero)
-    .join(" ");
-}
-
-// R5. Validación de la configuración
-function validarParejas(parejas) {
-    return Number.isInteger(parejas)
-        && parejas >= 4
-        && parejas <= 12;
-}
-
-function validarConfiguracion(config) {
-    return config !== null
-        && typeof config === "object"
-        && !Array.isArray(config)
-        && validarParejas(config.parejas);
+    return true;
 }

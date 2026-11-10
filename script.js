@@ -1,3 +1,4 @@
+
 // R1. CONFIGURACIÓN DE LA PARTIDA
 
 const configuracionInicial = {
@@ -33,11 +34,13 @@ function calcularTablero(numeroParejas) {
     let numeroCartas = numeroParejas * 2;
     let columnas = Math.floor(Math.sqrt(numeroCartas));
     let filas = Math.ceil(numeroCartas / columnas);
+
     return {
         filas: filas,
         columnas: columnas
     };
 }
+
 
 // R2. GENERACIÓN DE CARTAS
 
@@ -54,19 +57,24 @@ function generarCartas(numeroParejas) {
     let cartas = [];
 
     for (let i = 1; i <= numeroParejas; i++) {
+
         let carta1 = {
             numero: i,
             descubierta: true
         };
+
         let carta2 = {
             numero: i,
             descubierta: true
         };
+
         cartas.push(carta1);
         cartas.push(carta2);
     }
+
     return cartas;
 }
+
 
 // R3. BARAJADO
 
@@ -86,11 +94,14 @@ function barajarCartas(cartas) {
 
         let posicionAleatoria = Math.floor(Math.random() * (i + 1));
         let auxiliar = cartas[i];
+
         cartas[i] = cartas[posicionAleatoria];
         cartas[posicionAleatoria] = auxiliar;
     }
+
     return cartas;
 }
+
 
 // R4. PRESENTACIÓN DEL TABLERO
 
@@ -104,6 +115,7 @@ function barajarCartas(cartas) {
  * Dimensiones del tablero: número de filas y columnas.
  * @returns {void}
  */
+
 function mostrarCartas(cartas, dimensiones) {
 
     let contenido = "<table>";
@@ -119,7 +131,6 @@ function mostrarCartas(cartas, dimensiones) {
             if (posicion < cartas.length) {
 
                 contenido += `<td>${cartas[posicion].numero}</td>`;
-
             }
         }
 
@@ -128,8 +139,10 @@ function mostrarCartas(cartas, dimensiones) {
 
     contenido += "</table>";
 
-    document.write(contenido);
+    document.getElementById("tablero").innerHTML = contenido;
 }
+
+
 
 // R5. VALIDACIÓN DE LA CONFIGURACIÓN
 
@@ -144,17 +157,59 @@ function mostrarCartas(cartas, dimensiones) {
 function validarConfiguracion(numero) {
 
     if (!Number.isInteger(numero)) {
+
         console.error("El número de parejas debe ser un entero.");
         return false;
     }
 
     if (numero < 4 || numero > 12) {
+
         console.error("El número de parejas debe estar entre 4 y 12.");
         return false;
     }
 
     return true;
 }
+
+
+/**
+ * Comprueba que las cartas guardadas sean válidas y que existan
+ * exactamente dos cartas de cada número.
+ *
+ * @param {Array} cartas - Cartas que se desean comprobar.
+ * @param {number} parejas - Número de parejas de la partida.
+ * @returns {boolean} True si las cartas son válidas.
+ */
+function validarCartasGuardadas(cartas, parejas) {
+
+    if (!Array.isArray(cartas) || cartas.length !== parejas * 2) {
+
+        return false;
+    }
+
+    let cantidades = Array(parejas + 1).fill(0);
+
+    for (let carta of cartas) {
+
+        if (
+            carta === null ||
+            typeof carta !== "object" ||
+            Array.isArray(carta) ||
+            !Number.isInteger(carta.numero) ||
+            carta.numero < 1 ||
+            carta.numero > parejas ||
+            typeof carta.descubierta !== "boolean"
+        ) {
+
+            return false;
+        }
+
+        cantidades[carta.numero]++;
+    }
+
+    return cantidades.slice(1).every(cantidad => cantidad === 2);
+}
+
 
 // R6. PREFERENCIAS PERSISTENTES
 
@@ -164,17 +219,31 @@ const claveConfig = "juegoParejasConfiguracion";
  * Guarda la configuración de la partida en localStorage,
  * convirtiendo el objeto JavaScript a formato JSON.
  *
+ * También guarda las cartas para poder recuperar la misma
+ * partida y mantener el orden del barajado.
+ *
  * @param {{parejas: number}} datos - Objeto con la configuración
  * que se desea guardar.
+ * @param {Array} [cartas] - Cartas de la partida.
  * @returns {void}
  */
-function guardarConfiguracion(datos) {
+function guardarConfiguracion(datos, cartas = null) {
+
+    let partida = {
+        parejas: datos.parejas
+    };
+
+    if (cartas !== null) {
+
+        partida.cartas = cartas;
+    }
 
     localStorage.setItem(
         claveConfig,
-        JSON.stringify(datos)
+        JSON.stringify(partida)
     );
 }
+
 
 /**
  * Recupera la configuración guardada en localStorage y comprueba
@@ -182,8 +251,8 @@ function guardarConfiguracion(datos) {
  * Si no existe una configuración guardada o los datos son
  * incorrectos, devuelve la configuración predeterminada.
  *
- * @returns {{parejas: number}} Objeto con la configuración recuperada
- * o con los valores iniciales.
+ * @returns {{parejas: number, cartas: Array|null}} Objeto con la
+ * configuración y las cartas recuperadas o con los valores iniciales.
  */
 function recuperarConfiguracion() {
 
@@ -202,8 +271,16 @@ function recuperarConfiguracion() {
                 validarConfiguracion(configuracionGuardada.parejas)
             ) {
 
+                let cartas = validarCartasGuardadas(
+                    configuracionGuardada.cartas,
+                    configuracionGuardada.parejas
+                )
+                    ? configuracionGuardada.cartas
+                    : null;
+
                 return {
-                    parejas: configuracionGuardada.parejas
+                    parejas: configuracionGuardada.parejas,
+                    cartas: cartas
                 };
             }
 
@@ -214,21 +291,31 @@ function recuperarConfiguracion() {
         }
     }
 
-    return { ...configuracionInicial };
+    return {
+        parejas: configuracionInicial.parejas,
+        cartas: null
+    };
 }
+
 
 /**
  * Restablece la configuración de la partida a sus valores
  * predeterminados y guarda los cambios en localStorage.
  *
+ * Al guardar únicamente la configuración, también se elimina
+ * la información de las cartas de la partida anterior.
+ *
  * @returns {void}
  */
 function restablecerConfiguracion() {
-    
+
     configuracion = { ...configuracionInicial };
+
     guardarConfiguracion(configuracion);
+
     console.log("Configuración restablecida.");
 }
+
 
 // R7. RESUMEN EN CONSOLA
 
@@ -245,43 +332,69 @@ function restablecerConfiguracion() {
 function mostrarResumen(cartas, numeroParejas) {
 
     console.log("===== RESUMEN DE LA PARTIDA =====");
+
     console.log("Número de parejas:", numeroParejas);
+
     console.log("Número de cartas:", cartas.length);
+
     console.log(
         "Secuencia de números:",
         cartas.map(carta => carta.numero)
     );
+
     console.log("=================================");
 }
+
 
 // R8. ORGANIZACIÓN Y DOCUMENTACIÓN
 
 /**
- * Prepara una nueva partida comprobando primero que la configuración
- * sea válida. Guarda las preferencias, genera las cartas, las baraja,
- * calcula las dimensiones del tablero y muestra el resumen en consola
- * y las cartas en la página web.
+ * Prepara una partida nueva o recupera una partida anterior.
+ * Guarda la configuración y las cartas, calcula las dimensiones,
+ * muestra el resumen y presenta el tablero.
  *
- * @param {number} numeroParejas - Número de parejas de la partida.
+ * @param {number} numeroParejas - Número de parejas.
+ * @param {Array|null} cartasGuardadas - Cartas de una partida anterior.
  * @returns {void}
  */
-function prepararPartida(numeroParejas) {
+function prepararPartida(numeroParejas, cartasGuardadas = null) {
 
     if (!validarConfiguracion(numeroParejas)) {
+
         console.error("No se puede preparar la partida.");
         return;
     }
 
     configuracion.parejas = numeroParejas;
-    guardarConfiguracion(configuracion);
-    let cartas = generarCartas(numeroParejas);
-    cartas = barajarCartas(cartas);
+
+    let cartas;
+
+    if (validarCartasGuardadas(cartasGuardadas, numeroParejas)) {
+
+        cartas = cartasGuardadas;
+
+        console.log("Partida anterior recuperada.");
+
+    } else {
+
+        cartas = generarCartas(numeroParejas);
+
+        cartas = barajarCartas(cartas);
+    }
+
+    guardarConfiguracion(configuracion, cartas);
+
     let dimensiones = calcularTablero(numeroParejas);
+
     console.log("Filas del tablero:", dimensiones.filas);
+
     console.log("Columnas del tablero:", dimensiones.columnas);
+
     mostrarResumen(cartas, numeroParejas);
+
     mostrarCartas(cartas, dimensiones);
 }
+
 
 // R9. FINALIZACIÓN DE LA PARTIDA
 
@@ -294,33 +407,83 @@ function prepararPartida(numeroParejas) {
 function finDePartida() {
 
     localStorage.removeItem(claveConfig);
+
     console.log("Partida finalizada.");
 }
+
 
 // Inicio automático de la aplicación
 
 /**
- * Inicia la aplicación recuperando la configuración guardada
- * o utilizando los valores predeterminados. Solicita al usuario
- * el número de parejas y, si es válido, prepara la partida.
- * Si el valor introducido no es válido, utiliza la configuración
- * previamente recuperada.
+ * Inicia la aplicación comprobando si existe una partida anterior.
+ * Si existe, permite continuarla o comenzar una nueva partida.
+ *
+ * Si no existe, solicita la configuración al usuario.
  *
  * @returns {void}
  */
 function iniciarJuego() {
 
     configuracion = recuperarConfiguracion();
-    console.log("Configuración inicial:", configuracion);
-    let numeroParejas = pedirConfiguracion();
 
-    if (validarConfiguracion(numeroParejas)) {
-        prepararPartida(numeroParejas);
+    console.log("Configuración inicial:", configuracion);
+
+    // Comprobar si existe una partida anterior.
+    if (configuracion.cartas !== null) {
+
+        console.log("Se ha encontrado una partida guardada.");
+
+        // Preguntar si quiere continuar o empezar una partida nueva.
+        let continuarPartida = confirm(
+            "Se ha encontrado una partida anterior. " +
+            "¿Quieres continuarla? Pulsa Aceptar para continuar " +
+            "o Cancelar para empezar una nueva."
+        );
+
+        if (continuarPartida) {
+
+            // Recuperar la partida anterior.
+            prepararPartida(
+                configuracion.parejas,
+                configuracion.cartas
+            );
+
+        } else {
+
+            // Solicitar el número de parejas para la nueva partida.
+            let numeroParejas = pedirConfiguracion();
+
+            if (validarConfiguracion(numeroParejas)) {
+
+                prepararPartida(numeroParejas);
+
+            } else {
+
+                console.log("Se mantiene la partida anterior.");
+
+                prepararPartida(
+                    configuracion.parejas,
+                    configuracion.cartas
+                );
+            }
+        }
 
     } else {
-        console.log("Se utilizará la configuración guardada.")
-        prepararPartida(configuracion.parejas);
 
+        // Si no existe una partida guardada, solicitar configuración.
+        let numeroParejas = pedirConfiguracion();
+
+        if (validarConfiguracion(numeroParejas)) {
+
+            prepararPartida(numeroParejas);
+
+        } else {
+
+            console.log("Se utilizará la configuración guardada.");
+
+            prepararPartida(configuracion.parejas);
+        }
     }
 }
+
 iniciarJuego();

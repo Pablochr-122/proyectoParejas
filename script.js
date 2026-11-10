@@ -487,3 +487,30 @@ function iniciarJuego() {
 }
 
 iniciarJuego();
+
+// FUNCIÓN PARA DAR VUELTA A CARTAS
+
+function darVueltaCartas() {
+
+    const cartasHTML = document.querySelectorAll("#tablero td");
+
+    cartasHTML.forEach(carta => {
+
+        carta.dataset.numero = carta.textContent;
+        carta.textContent = "";
+
+        carta.onclick = function () {
+
+            if (carta.textContent === "") {
+                carta.textContent = carta.dataset.numero;
+                carta.style.backgroundColor = "white";
+                carta.style.color = "black";
+            } else {
+                carta.textContent = "";
+                carta.style.backgroundColor = "rgb(36, 35, 35)";
+                carta.style.color = "white";
+            }
+        };
+    });
+}
+window.darVueltaCartas = darVueltaCartas;

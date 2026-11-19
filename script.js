@@ -1,4 +1,3 @@
-
 // R1. CONFIGURACIÓN DE LA PARTIDA
 
 const configuracionInicial = {
@@ -9,17 +8,20 @@ let configuracion = {
     parejas: configuracionInicial.parejas
 };
 
+
 /**
  * Solicita al usuario mediante un prompt el número de parejas
  * que tendrá la partida.
  *
  * @returns {number} Número de parejas introducido por el usuario.
  */
+
 function pedirConfiguracion() {
 
     let numeroParejas = prompt("Introduce el número de parejas (entre 4 y 12):");
     return Number(numeroParejas);
 }
+
 
 /**
  * Calcula las dimensiones del tablero en función del número
@@ -29,6 +31,7 @@ function pedirConfiguracion() {
  * @returns {{filas: number, columnas: number}} Objeto con el número
  * de filas y columnas necesarias para mostrar todas las cartas.
  */
+
 function calcularTablero(numeroParejas) {
 
     let numeroCartas = numeroParejas * 2;
@@ -42,31 +45,135 @@ function calcularTablero(numeroParejas) {
 }
 
 
+/**
+ * Representa una carta del juego de parejas.
+ *
+ * Cada carta contiene un número identificador y un estado
+ * que indica si está descubierta o boca abajo.
+ *
+ * Sus atributos son privados y se accede a ellos mediante
+ * getters y setters.
+ */
+
+class Carta {
+
+    #numero;
+    #descubierta;
+
+
+        /**
+    * Crea una nueva carta.
+    *
+    * @param {number} numero - Número identificador de la carta.
+    * @param {boolean} [descubierta=false] - Estado inicial de la carta.
+    */
+
+    constructor(numero, descubierta = false) {
+
+        this.#validarNumero(numero);
+
+        if (typeof descubierta !== "boolean") {
+            throw new TypeError("El estado de la carta debe ser booleano.");
+        }
+
+        this.#numero = numero;
+        this.#descubierta = descubierta;
+    }
+
+
+        /**
+    * Comprueba que el número de la carta sea un entero positivo.
+    *
+    * @param {number} numero - Número que se desea validar.
+    * @returns {void}
+    * @throws {TypeError} Si el número no es un entero positivo.
+    */
+
+    #validarNumero(numero) {
+
+        if (!Number.isInteger(numero) || numero < 1) {
+            throw new TypeError("El número de carta no es válido.");
+        }
+    }
+
+    // Getter y setter del número
+    get numero() {
+        return this.#numero;
+    }
+
+    set numero(numero) {
+        this.#validarNumero(numero);
+        this.#numero = numero;
+    }
+
+    // Getter y setter del estado
+    get descubierta() {
+        return this.#descubierta;
+    }
+
+    set descubierta(estado) {
+
+        if (typeof estado !== "boolean") {
+            throw new TypeError("El estado debe ser verdadero o falso.");
+        }
+
+        this.#descubierta = estado;
+    }
+
+
+    /**
+    * Cambia el estado de la carta.
+    *
+     * Si está descubierta, la vuelve a poner boca abajo.
+    * Si está boca abajo, la muestra.
+     *
+     * @returns {boolean} Nuevo estado de la carta.
+     */
+
+    voltear() {
+
+        this.#descubierta = !this.#descubierta;
+
+        return this.#descubierta;
+    }
+
+
+    /**
+    * Convierte la instancia de Carta en un objeto serializable
+    * para poder guardarla en localStorage mediante JSON.stringify().
+    *
+    * @returns {{tipo: string, numero: number, descubierta: boolean}}
+    * Objeto con los datos de la carta.
+    */
+
+    toJSON() {
+
+        return {
+            tipo: "Carta",
+            numero: this.#numero,
+            descubierta: this.#descubierta
+        };
+    }
+}
+
 // R2. GENERACIÓN DE CARTAS
 
 /**
- * Genera dos cartas por cada pareja. Cada carta contiene un número
- * identificador y una propiedad booleana que indica si está descubierta.
+ * Genera dos cartas por cada pareja utilizando la clase Carta.
+ * Todas las cartas se crean inicialmente boca abajo.
  *
  * @param {number} numeroParejas - Número de parejas que se generarán.
- * @returns {Array<{numero: number, descubierta: boolean}>}
- * Array con todas las cartas generadas.
+ * @returns {Carta[]} Array con todas las instancias de Carta generadas.
  */
+
 function generarCartas(numeroParejas) {
 
     let cartas = [];
 
     for (let i = 1; i <= numeroParejas; i++) {
 
-        let carta1 = {
-            numero: i,
-            descubierta: true
-        };
-
-        let carta2 = {
-            numero: i,
-            descubierta: true
-        };
+        let carta1 = new Carta(i, false);
+        let carta2 = new Carta(i, false);
 
         cartas.push(carta1);
         cartas.push(carta2);
@@ -88,6 +195,7 @@ function generarCartas(numeroParejas) {
  * @returns {Array<{numero: number, descubierta: boolean}>}
  * Array de cartas con un orden aleatorio.
  */
+
 function barajarCartas(cartas) {
 
     for (let i = cartas.length - 1; i > 0; i--) {
@@ -116,7 +224,6 @@ function barajarCartas(cartas) {
  * @returns {void}
  */
 
-
 function mostrarCartas(cartas, dimensiones) {
 
     let contenido = "<table>";
@@ -131,12 +238,19 @@ function mostrarCartas(cartas, dimensiones) {
 
             if (posicion < cartas.length) {
 
+                let carta = cartas[posicion];
+
                 contenido += `
                     <td
                         id="carta-${i}-${j}"
-                        data-numero="${cartas[posicion].numero}"
                         onclick="voltear(${i}, ${j})"
-                    >X</td>
+                        data-numero="${carta.numero}"
+                        style="
+                            ${carta.descubierta
+                                ? "background-color: white; color: black;"
+                                : ""}
+                        "
+                    >${carta.descubierta ? carta.numero : "X"}</td>
                 `;
             }
         }
@@ -160,6 +274,7 @@ function mostrarCartas(cartas, dimensiones) {
  * @returns {boolean} Devuelve true si la configuración es válida
  * y false si no cumple los requisitos.
  */
+
 function validarConfiguracion(numero) {
 
     if (!Number.isInteger(numero)) {
@@ -186,6 +301,7 @@ function validarConfiguracion(numero) {
  * @param {number} parejas - Número de parejas de la partida.
  * @returns {boolean} True si las cartas son válidas.
  */
+
 function validarCartasGuardadas(cartas, parejas) {
 
     if (!Array.isArray(cartas) || cartas.length !== parejas * 2) {
@@ -201,6 +317,7 @@ function validarCartasGuardadas(cartas, parejas) {
             carta === null ||
             typeof carta !== "object" ||
             Array.isArray(carta) ||
+            !(carta instanceof Carta) && carta.tipo !== "Carta" ||
             !Number.isInteger(carta.numero) ||
             carta.numero < 1 ||
             carta.numero > parejas ||
@@ -233,6 +350,7 @@ const claveConfig = "juegoParejasConfiguracion";
  * @param {Array} [cartas] - Cartas de la partida.
  * @returns {void}
  */
+
 function guardarConfiguracion(datos, cartas = null) {
 
     let partida = {
@@ -260,6 +378,7 @@ function guardarConfiguracion(datos, cartas = null) {
  * @returns {{parejas: number, cartas: Array|null}} Objeto con la
  * configuración y las cartas recuperadas o con los valores iniciales.
  */
+
 function recuperarConfiguracion() {
 
     let datos = localStorage.getItem(claveConfig);
@@ -281,7 +400,12 @@ function recuperarConfiguracion() {
                     configuracionGuardada.cartas,
                     configuracionGuardada.parejas
                 )
-                    ? configuracionGuardada.cartas
+                    ? configuracionGuardada.cartas.map(
+                        carta => new Carta(
+                            carta.numero,
+                            carta.descubierta
+                        )
+                    )
                     : null;
 
                 return {
@@ -293,7 +417,6 @@ function recuperarConfiguracion() {
         } catch (error) {
 
             console.error("Error al recuperar la configuración.");
-
         }
     }
 
@@ -313,6 +436,7 @@ function recuperarConfiguracion() {
  *
  * @returns {void}
  */
+
 function restablecerConfiguracion() {
 
     configuracion = { ...configuracionInicial };
@@ -335,6 +459,7 @@ function restablecerConfiguracion() {
  * @param {number} numeroParejas - Número de parejas configuradas.
  * @returns {void}
  */
+
 function mostrarResumen(cartas, numeroParejas) {
 
     console.log("===== RESUMEN DE LA PARTIDA =====");
@@ -363,6 +488,7 @@ function mostrarResumen(cartas, numeroParejas) {
  * @param {Array|null} cartasGuardadas - Cartas de una partida anterior.
  * @returns {void}
  */
+
 function prepararPartida(numeroParejas, cartasGuardadas = null) {
 
     if (!validarConfiguracion(numeroParejas)) {
@@ -388,6 +514,8 @@ function prepararPartida(numeroParejas, cartasGuardadas = null) {
         cartas = barajarCartas(cartas);
     }
 
+    cartasPartida = cartas;
+
     guardarConfiguracion(configuracion, cartas);
 
     let dimensiones = calcularTablero(numeroParejas);
@@ -410,6 +538,7 @@ function prepararPartida(numeroParejas, cartasGuardadas = null) {
  *
  * @returns {void}
  */
+
 function finDePartida() {
 
     localStorage.removeItem(claveConfig);
@@ -428,6 +557,7 @@ function finDePartida() {
  *
  * @returns {void}
  */
+
 function iniciarJuego() {
 
     configuracion = recuperarConfiguracion();
@@ -497,28 +627,70 @@ iniciarJuego();
 
 // FUNCIÓN PARA DAR VUELTA A CARTAS
 
+/**
+ * Voltea la carta situada en las coordenadas indicadas del tablero.
+ *
+ * Cambia el estado de la instancia de Carta mediante su método
+ * público voltear(), actualiza su representación visual en el HTML
+ * y guarda el nuevo estado de las cartas en localStorage.
+ *
+ * @param {number} x - Índice de la fila de la carta (empieza en 0).
+ * @param {number} y - Índice de la columna de la carta (empieza en 0).
+ * @returns {void}
+ */
+
 function voltear(x, y) {
 
-    let carta = document.getElementById(`carta-${x}-${y}`);
+    let dimensiones = calcularTablero(configuracion.parejas);
 
-    if (carta === null) {
+    if (
+        !Number.isInteger(x) ||
+        !Number.isInteger(y) ||
+        x < 0 ||
+        y < 0 ||
+        x >= dimensiones.filas ||
+        y >= dimensiones.columnas
+    ) {
+        console.error("Posición de carta no válida.");
+        return;
+    }
 
+    let posicion = x * dimensiones.columnas + y;
+
+    if (posicion >= cartasPartida.length) {
         console.error("No existe una carta en esa posición.");
         return;
     }
 
-    if (carta.textContent === "x") {
+    let carta = cartasPartida[posicion];
 
-        carta.textContent = carta.dataset.numero;
-        carta.style.backgroundColor = "white";
-        carta.style.color = "black";
+    // Cambiar el estado de la carta.
+    carta.voltear();
+
+    // Obtener el elemento HTML.
+    let cartaHTML = document.getElementById(`carta-${x}-${y}`);
+
+    if (cartaHTML === null) {
+        console.error("No se encuentra la carta en el tablero.");
+        return;
+    }
+
+    // Actualizar su apariencia.
+    if (carta.descubierta) {
+
+        cartaHTML.textContent = carta.numero;
+        cartaHTML.style.backgroundColor = "white";
+        cartaHTML.style.color = "black";
 
     } else {
 
-        carta.textContent = "x";
-        carta.style.backgroundColor = "rgb(36, 35, 35)";
-        carta.style.color = "white";
+        cartaHTML.textContent = "X";
+        cartaHTML.style.backgroundColor = "rgb(36, 35, 35)";
+        cartaHTML.style.color = "white";
     }
+
+    // Guardar el estado actualizado.
+    guardarConfiguracion(configuracion, cartasPartida);
 }
 
 window.voltear = voltear;

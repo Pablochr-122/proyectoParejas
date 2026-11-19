@@ -116,6 +116,7 @@ function barajarCartas(cartas) {
  * @returns {void}
  */
 
+
 function mostrarCartas(cartas, dimensiones) {
 
     let contenido = "<table>";
@@ -130,7 +131,13 @@ function mostrarCartas(cartas, dimensiones) {
 
             if (posicion < cartas.length) {
 
-                contenido += `<td>${cartas[posicion].numero}</td>`;
+                contenido += `
+                    <td
+                        id="carta-${i}-${j}"
+                        data-numero="${cartas[posicion].numero}"
+                        onclick="voltear(${i}, ${j})"
+                    >X</td>
+                `;
             }
         }
 
@@ -141,7 +148,6 @@ function mostrarCartas(cartas, dimensiones) {
 
     document.getElementById("tablero").innerHTML = contenido;
 }
-
 
 
 // R5. VALIDACIÓN DE LA CONFIGURACIÓN
@@ -488,29 +494,31 @@ function iniciarJuego() {
 
 iniciarJuego();
 
+
 // FUNCIÓN PARA DAR VUELTA A CARTAS
 
-function darVueltaCartas() {
+function voltear(x, y) {
 
-    const cartasHTML = document.querySelectorAll("#tablero td");
+    let carta = document.getElementById(`carta-${x}-${y}`);
 
-    cartasHTML.forEach(carta => {
+    if (carta === null) {
 
-        carta.dataset.numero = carta.textContent;
-        carta.textContent = "";
+        console.error("No existe una carta en esa posición.");
+        return;
+    }
 
-        carta.onclick = function () {
+    if (carta.textContent === "x") {
 
-            if (carta.textContent === "") {
-                carta.textContent = carta.dataset.numero;
-                carta.style.backgroundColor = "white";
-                carta.style.color = "black";
-            } else {
-                carta.textContent = "";
-                carta.style.backgroundColor = "rgb(36, 35, 35)";
-                carta.style.color = "white";
-            }
-        };
-    });
+        carta.textContent = carta.dataset.numero;
+        carta.style.backgroundColor = "white";
+        carta.style.color = "black";
+
+    } else {
+
+        carta.textContent = "x";
+        carta.style.backgroundColor = "rgb(36, 35, 35)";
+        carta.style.color = "white";
+    }
 }
-window.darVueltaCartas = darVueltaCartas;
+
+window.voltear = voltear;

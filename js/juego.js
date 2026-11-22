@@ -1,3 +1,12 @@
+
+import { Carta } from "./Carta.js";
+import { contador, actualizarContador } from "./Contador.js";
+import {
+    temporizador,
+    actualizarTemporizador
+} from "./temporizador.js";
+
+
 // R1. CONFIGURACIÓN DE LA PARTIDA
 
 const configuracionInicial = {
@@ -8,7 +17,6 @@ let configuracion = {
     parejas: configuracionInicial.parejas
 };
 
-// Cartas de la partida que se está jugando actualmente.
 let cartasPartida = [];
 
 
@@ -18,7 +26,6 @@ let cartasPartida = [];
  *
  * @returns {number} Número de parejas introducido por el usuario.
  */
-
 function pedirConfiguracion() {
 
     let numeroParejas = prompt("Introduce el número de parejas (entre 4 y 12):");
@@ -31,10 +38,8 @@ function pedirConfiguracion() {
  * de parejas. El número de cartas será el doble de las parejas.
  *
  * @param {number} numeroParejas - Número de parejas de la partida.
- * @returns {{filas: number, columnas: number}} Objeto con el número
- * de filas y columnas necesarias para mostrar todas las cartas.
+ * @returns {{filas: number, columnas: number}} Dimensiones del tablero.
  */
-
 function calcularTablero(numeroParejas) {
 
     let numeroCartas = numeroParejas * 2;
@@ -45,273 +50,6 @@ function calcularTablero(numeroParejas) {
         filas: filas,
         columnas: columnas
     };
-}
-
-
-/**
- * Gestiona los observadores que reciben notificaciones
- * cuando una carta cambia su estado.
- */
-class Observador {
-
-    constructor() {
-        this.observadores = [];
-    }
-
-    /**
-     * Añade un observador a la lista.
-     *
-     * @param {Function} observador - Función que recibirá la notificación.
-     * @returns {void}
-     */
-    suscribir(observador) {
-        this.observadores.push(observador);
-    }
-
-    /**
-     * Elimina un observador de la lista.
-     *
-     * @param {Function} observador - Observador que se desea eliminar.
-     * @returns {void}
-     */
-    desuscribir(observador) {
-        this.observadores = this.observadores.filter(
-            elemento => elemento !== observador
-        );
-    }
-
-    /**
-     * Notifica a todos los observadores suscritos.
-     *
-     * @param {Carta} carta - Carta cuyo estado ha cambiado.
-     * @returns {void}
-     */
-    notificar(carta) {
-        this.observadores.forEach(observador => observador(carta));
-    }
-}
-
-const observadorCartas = new Observador();
-
-
-/**
- * Representa una carta del juego de parejas.
- *
- * Cada carta contiene un número identificador y un estado
- * que indica si está descubierta o boca abajo.
- *
- * Sus atributos son privados y se accede a ellos mediante
- * getters y setters.
- */
-class Carta {
-
-    #numero;
-    #descubierta;
-
-
-    /**
-    * Crea una nueva carta.
-    *
-    * @param {number} numero - Número identificador de la carta.
-    * @param {boolean} [descubierta=false] - Estado inicial de la carta.
-    */
-    constructor(numero, descubierta = false) {
-
-        this.#validarNumero(numero);
-
-        if (typeof descubierta !== "boolean") {
-            throw new TypeError("El estado de la carta debe ser booleano.");
-        }
-
-        this.#numero = numero;
-        this.#descubierta = descubierta;
-    }
-
-
-    /**
-    * Comprueba que el número de la carta sea un entero positivo.
-    *
-    * @param {number} numero - Número que se desea validar.
-    * @returns {void}
-    * @throws {TypeError} Si el número no es un entero positivo.
-    */
-    #validarNumero(numero) {
-
-        if (!Number.isInteger(numero) || numero < 1) {
-            throw new TypeError("El número de carta no es válido.");
-        }
-    }
-
-    // Getter y setter del número
-    get numero() {
-        return this.#numero;
-    }
-
-    set numero(numero) {
-        this.#validarNumero(numero);
-        this.#numero = numero;
-    }
-
-    // Getter y setter del estado
-    get descubierta() {
-        return this.#descubierta;
-    }
-
-    set descubierta(estado) {
-
-        if (typeof estado !== "boolean") {
-            throw new TypeError("El estado debe ser verdadero o falso.");
-        }
-
-        let estadoAnterior = this.#descubierta;
-
-        this.#descubierta = estado;
-
-        if (estadoAnterior === false && estado === true) {
-            observadorCartas.notificar(this);
-        }
-    }
-
-    /**
-    * Cambia el estado de la carta.
-    *
-    * @returns {boolean} Nuevo estado de la carta.
-    */
-    voltear() {
-
-        // IMPORTANTE: se utiliza el setter para notificar al observador.
-        this.descubierta = !this.#descubierta;
-
-        return this.#descubierta;
-    }
-
-
-    /**
-    * Convierte la instancia de Carta en un objeto serializable
-    * para poder guardarla en localStorage mediante JSON.stringify().
-    *
-    * @returns {{tipo: string, numero: number, descubierta: boolean}}
-    * Objeto con los datos de la carta.
-    */
-    toJSON() {
-
-        return {
-            tipo: "Carta",
-            numero: this.#numero,
-            descubierta: this.#descubierta
-        };
-    }
-}
-
-const claveContador = "juegoParejasContador";
-
-
-/**
- * Gestiona el contador de volteos mediante el patrón Singleton.
- *
- * Solo permite crear una instancia del contador y guarda
- * su valor en localStorage.
- */
-class Contador {
-
-    static #instancia = null;
-
-    #volteos;
-
-    constructor() {
-
-        // Evitar crear más de una instancia.
-        if (Contador.#instancia !== null) {
-            return Contador.#instancia;
-        }
-
-        let valorGuardado = Number(localStorage.getItem(claveContador));
-
-        this.#volteos = Number.isInteger(valorGuardado) &&
-                        valorGuardado >= 0
-                        ? valorGuardado
-                        : 0;
-
-        Contador.#instancia = this;
-    }
-
-    /**
-     * Devuelve la única instancia del contador.
-     *
-     * @returns {Contador} Instancia única del contador.
-     */
-    static obtenerInstancia() {
-
-        if (Contador.#instancia === null) {
-            new Contador();
-        }
-
-        return Contador.#instancia;
-    }
-
-    /**
-     * Obtiene el número actual de volteos.
-     *
-     * @returns {number} Número de volteos realizados.
-     */
-    get volteos() {
-        return this.#volteos;
-    }
-
-    /**
-     * Incrementa el contador en una unidad y guarda el resultado.
-     *
-     * @returns {void}
-     */
-    incrementar() {
-
-        this.#volteos++;
-
-        localStorage.setItem(
-            claveContador,
-            this.#volteos
-        );
-
-        actualizarContador();
-    }
-
-    /**
-     * Restablece el contador a cero y guarda el resultado.
-     *
-     * @returns {void}
-     */
-    reiniciar() {
-
-        this.#volteos = 0;
-
-        localStorage.setItem(claveContador, 0);
-
-        actualizarContador();
-    }
-}
-
-
-// Obtener la única instancia del contador.
-const contador = Contador.obtenerInstancia();
-
-// Suscribir el contador al observador de las cartas.
-observadorCartas.suscribir(() => {
-    contador.incrementar();
-});
-
-
-/**
- * Actualiza el contador de volteos mostrado en el HTML.
- *
- * @returns {void}
- */
-function actualizarContador() {
-
-    let elemento = document.getElementById("contador");
-
-    if (elemento !== null) {
-        elemento.textContent = "Volteos: " + contador.volteos;
-    }
 }
 
 
@@ -345,13 +83,9 @@ function generarCartas(numeroParejas) {
 
 /**
  * Mezcla las cartas utilizando el algoritmo Fisher-Yates.
- * Intercambia aleatoriamente las posiciones de las cartas
- * sin modificar su contenido ni alterar el número de elementos.
  *
- * @param {Array<{numero: number, descubierta: boolean}>} cartas
- * Array de cartas que se desea barajar.
- * @returns {Array<{numero: number, descubierta: boolean}>}
- * Array de cartas con un orden aleatorio.
+ * @param {Carta[]} cartas - Array de cartas que se desea barajar.
+ * @returns {Carta[]} Array de cartas con un orden aleatorio.
  */
 function barajarCartas(cartas) {
 
@@ -374,10 +108,8 @@ function barajarCartas(cartas) {
  * Muestra las cartas en el HTML siguiendo el orden del barajado
  * y las dimensiones calculadas para el tablero.
  *
- * @param {Array<{numero: number, descubierta: boolean}>} cartas
- * Array de cartas generadas y barajadas.
- * @param {{filas: number, columnas: number}} dimensiones
- * Dimensiones del tablero: número de filas y columnas.
+ * @param {Carta[]} cartas - Array de cartas generadas y barajadas.
+ * @param {{filas: number, columnas: number}} dimensiones - Dimensiones.
  * @returns {void}
  */
 function mostrarCartas(cartas, dimensiones) {
@@ -419,6 +151,7 @@ function mostrarCartas(cartas, dimensiones) {
     document.getElementById("tablero").innerHTML = contenido;
 }
 
+
 // R5. VALIDACIÓN DE LA CONFIGURACIÓN
 
 /**
@@ -426,8 +159,7 @@ function mostrarCartas(cartas, dimensiones) {
  * comprendido entre 4 y 12, ambos inclusive.
  *
  * @param {number} numero - Número de parejas que se desea validar.
- * @returns {boolean} Devuelve true si la configuración es válida
- * y false si no cumple los requisitos.
+ * @returns {boolean} True si la configuración es válida.
  */
 function validarConfiguracion(numero) {
 
@@ -458,7 +190,6 @@ function validarConfiguracion(numero) {
 function validarCartasGuardadas(cartas, parejas) {
 
     if (!Array.isArray(cartas) || cartas.length !== parejas * 2) {
-
         return false;
     }
 
@@ -476,7 +207,6 @@ function validarCartasGuardadas(cartas, parejas) {
             carta.numero > parejas ||
             typeof carta.descubierta !== "boolean"
         ) {
-
             return false;
         }
 
@@ -498,8 +228,7 @@ const claveConfig = "juegoParejasConfiguracion";
  * También guarda las cartas para poder recuperar la misma
  * partida y mantener el orden del barajado.
  *
- * @param {{parejas: number}} datos - Objeto con la configuración
- * que se desea guardar.
+ * @param {{parejas: number}} datos - Objeto con la configuración.
  * @param {Array} [cartas] - Cartas de la partida.
  * @returns {void}
  */
@@ -510,7 +239,6 @@ function guardarConfiguracion(datos, cartas = null) {
     };
 
     if (cartas !== null) {
-
         partida.cartas = cartas;
     }
 
@@ -524,11 +252,8 @@ function guardarConfiguracion(datos, cartas = null) {
 /**
  * Recupera la configuración guardada en localStorage y comprueba
  * que los datos almacenados sean válidos.
- * Si no existe una configuración guardada o los datos son
- * incorrectos, devuelve la configuración predeterminada.
  *
- * @returns {{parejas: number, cartas: Array|null}} Objeto con la
- * configuración y las cartas recuperadas o con los valores iniciales.
+ * @returns {{parejas: number, cartas: Array|null}} Configuración recuperada.
  */
 function recuperarConfiguracion() {
 
@@ -582,9 +307,6 @@ function recuperarConfiguracion() {
  * Restablece la configuración de la partida a sus valores
  * predeterminados y guarda los cambios en localStorage.
  *
- * Al guardar únicamente la configuración, también se elimina
- * la información de las cartas de la partida anterior.
- *
  * @returns {void}
  */
 function restablecerConfiguracion() {
@@ -594,6 +316,7 @@ function restablecerConfiguracion() {
     guardarConfiguracion(configuracion);
 
     contador.reiniciar();
+    temporizador.reiniciar();
 
     console.log("Configuración restablecida.");
 }
@@ -602,12 +325,9 @@ function restablecerConfiguracion() {
 // R7. RESUMEN EN CONSOLA
 
 /**
- * Muestra en la consola un resumen de la partida con el número
- * de parejas, el número total de cartas y la secuencia numérica
- * de las cartas después de realizar el barajado.
+ * Muestra en la consola un resumen de la partida.
  *
- * @param {Array<{numero: number, descubierta: boolean}>} cartas
- * Array de cartas de la partida.
+ * @param {Carta[]} cartas - Cartas de la partida.
  * @param {number} numeroParejas - Número de parejas configuradas.
  * @returns {void}
  */
@@ -632,8 +352,6 @@ function mostrarResumen(cartas, numeroParejas) {
 
 /**
  * Prepara una partida nueva o recupera una partida anterior.
- * Guarda la configuración y las cartas, calcula las dimensiones,
- * muestra el resumen y presenta el tablero.
  *
  * @param {number} numeroParejas - Número de parejas.
  * @param {Array|null} cartasGuardadas - Cartas de una partida anterior.
@@ -653,17 +371,21 @@ function prepararPartida(numeroParejas, cartasGuardadas = null) {
 
     if (validarCartasGuardadas(cartasGuardadas, numeroParejas)) {
 
+        // Recuperar las cartas de la partida anterior.
         cartas = cartasGuardadas;
 
         console.log("Partida anterior recuperada.");
 
     } else {
 
+        // Crear una partida nueva.
         cartas = generarCartas(numeroParejas);
 
         cartas = barajarCartas(cartas);
 
+        // Reiniciar el contador y el temporizador.
         contador.reiniciar();
+        temporizador.reiniciar();
     }
 
     cartasPartida = cartas;
@@ -681,13 +403,15 @@ function prepararPartida(numeroParejas, cartasGuardadas = null) {
     mostrarCartas(cartas, dimensiones);
 
     actualizarContador();
+    actualizarTemporizador();
 }
+
 
 // R9. FINALIZACIÓN DE LA PARTIDA
 
 /**
  * Finaliza la partida eliminando de localStorage la configuración
- * guardada de esta aplicación.
+ * guardada y reiniciando el contador y el temporizador.
  *
  * @returns {void}
  */
@@ -696,14 +420,13 @@ function finDePartida() {
     localStorage.removeItem(claveConfig);
 
     contador.reiniciar();
-
-    localStorage.removeItem(claveContador);
+    temporizador.reiniciar();
 
     console.log("Partida finalizada.");
 }
 
 
-// Inicio automático de la aplicación
+// INICIO DE LA APLICACIÓN
 
 /**
  * Inicia la aplicación comprobando si existe una partida anterior.
@@ -770,14 +493,12 @@ function iniciarJuego() {
 
         } else {
 
-            console.log("Se utilizará la configuración guardada.");
+            console.log("Se utilizará la configuración predeterminada.");
 
-            prepararPartida(configuracion.parejas);
+            prepararPartida(configuracionInicial.parejas);
         }
     }
 }
-
-iniciarJuego();
 
 
 // FUNCIÓN PARA DAR VUELTA A CARTAS
@@ -818,6 +539,12 @@ function voltear(x, y) {
 
     let carta = cartasPartida[posicion];
 
+    // Iniciar el temporizador al descubrir la primera carta.
+    // Si ya está funcionando, no se crea otro intervalo.
+    if (!carta.descubierta) {
+        temporizador.iniciar();
+    }
+
     // Cambiar el estado de la carta.
     carta.voltear();
 
@@ -843,8 +570,14 @@ function voltear(x, y) {
         cartaHTML.style.color = "white";
     }
 
-    // Guardar el estado actualizado.
+    // Guardar el estado actualizado de las cartas.
     guardarConfiguracion(configuracion, cartasPartida);
 }
 
+
+// Hacer accesible la función desde el onclick del HTML.
 window.voltear = voltear;
+
+
+// Iniciar el juego.
+iniciarJuego();
